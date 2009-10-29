@@ -18,6 +18,9 @@ class Kohana_Database_Query_Builder_Join extends Database_Query_Builder {
 	// ON ...
 	protected $_on = array();
 
+	// USING ...
+	protected $_using = array();
+
 	/**
 	 * Creates a new JOIN statement for a table. Optionally, the type of JOIN
 	 * can be specified as the second parameter.
@@ -48,7 +51,33 @@ class Kohana_Database_Query_Builder_Join extends Database_Query_Builder {
 	 */
 	public function on($c1, $op, $c2)
 	{
+		if ( ! empty($this->_using))
+		{
+			throw new Kohana_Exception('JOIN ... ON ... cannot be combined with JOIN ... USING ...');
+		}
+
 		$this->_on[] = array($c1, $op, $c2);
+
+		return $this;
+	}
+
+	/**
+	 * Adds a new condition for joining.
+	 *
+	 * @param   string  column name
+	 * @param   ...
+	 * @return  $this
+	 */
+	public function using($columns)
+	{
+		if ( ! empty($this->_on))
+		{
+			throw new Kohana_Exception('JOIN ... ON ... cannot be combined with JOIN ... USING ...');
+		}
+
+		$columns = func_get_args();
+
+		$this->_using = array_merge($this->_using, $columns);
 
 		return $this;
 	}
@@ -71,20 +100,28 @@ class Kohana_Database_Query_Builder_Join extends Database_Query_Builder {
 		}
 
 		// Quote the table name that is being joined
-		$sql .= ' '.$db->quote_table($this->_table).' ON ';
+		$sql .= ' '.$db->quote_table($this->_table);
 
-		$conditions = array();
-		foreach ($this->_on as $condition)
+		if ( ! empty($this->_using))
 		{
-			// Split the condition
-			list($c1, $op, $c2) = $condition;
-
-			// Quote each of the identifiers used for the condition
-			$conditions[] = $db->quote_identifier($c1).' '.strtoupper($op).' '.$db->quote_identifier($c2);
+			// Quote and concat the columns
+			$sql .= ' USING ('.implode(', ', array_map(array($db, 'quote_identifier'), $this->_using)).')';
 		}
+		else
+		{
+			$conditions = array();
+			foreach ($this->_on as $condition)
+			{
+				// Split the condition
+				list($c1, $op, $c2) = $condition;
 
-		// Concat the conditions "... AND ..."
-		$sql .= '('.implode(' AND ', $conditions).')';
+				// Quote each of the identifiers used for the condition
+				$conditions[] = $db->quote_identifier($c1).' '.strtoupper($op).' '.$db->quote_identifier($c2);
+			}
+
+			// Concat the conditions "... AND ..."
+			$sql .= ' ON ('.implode(' AND ', $conditions).')';
+		}
 
 		return $sql;
 	}
