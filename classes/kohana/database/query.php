@@ -21,8 +21,9 @@ class Kohana_Database_Query {
 	// Quoted query parameters
 	protected $_parameters = array();
 
-	// Return results as associative arrays or objects
-	protected $_as_object = FALSE;
+	// Return SELECT results as associative arrays or objects
+	// Return INSERT column
+	protected $_return = FALSE;
 
 	/**
 	 * Creates a new SQL query of the specified type.
@@ -79,30 +80,43 @@ class Kohana_Database_Query {
 	}
 
 	/**
-	 * Returns results as associative arrays
+	 * Returns SELECT results as associative arrays
 	 *
 	 * @return  $this
 	 */
 	public function as_assoc()
 	{
-		$this->_as_object = FALSE;
+		$this->_return = FALSE;
 
 		return $this;
 	}
 
 	/**
-	 * Returns results as objects
+	 * Returns SELECT results as objects
 	 *
 	 * @param   string  classname or TRUE for stdClass
 	 * @return  $this
 	 */
 	public function as_object($class = TRUE)
 	{
-		$this->_as_object = $class;
+		$this->_return = $class;
 
 		return $this;
 	}
- 
+
+	/**
+	 * Returns a column from INSERT results
+	 *
+	 * @param   string  column to return or FALSE for none
+	 * @return  $this
+	 */
+	public function return_column($column)
+	{
+		$this->_return = $column;
+
+		return $this;
+	}
+
 	/**
 	 * Set the value of a parameter in the query.
 	 *
@@ -203,7 +217,7 @@ class Kohana_Database_Query {
 		}
 
 		// Execute the query
-		$result = $db->query($this->_type, $sql, $this->_as_object);
+		$result = $db->query($this->_type, $sql, $this->_return);
 
 		if (isset($cache_key))
 		{

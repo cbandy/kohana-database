@@ -149,12 +149,14 @@ abstract class Kohana_Database {
 	 *
 	 * @param   integer  Database::SELECT, Database::INSERT, etc
 	 * @param   string   SQL query
-	 * @param   string   result object class, TRUE for stdClass, FALSE for assoc array
+	 * @param   mixed    Result modifier
+	 *                   SELECT: the result object class, TRUE for stdClass, or FALSE for associative array
+	 *                   INSERT: the last sequenced column to return
 	 * @return  object   Database_Result for SELECT queries
-	 * @return  array    list (insert id, row count) for INSERT queries
+	 * @return  array    list (column value, row count) when returning a column from INSERT queries
 	 * @return  integer  number of affected rows for all other queries
 	 */
-	abstract public function query($type, $sql, $as_object);
+	abstract public function query($type, $sql, $return);
 
 	/**
 	 * Count the number of records in a table.

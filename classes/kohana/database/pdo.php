@@ -64,7 +64,7 @@ class Kohana_Database_PDO extends Database {
 		$this->_connection->exec('SET NAMES '.$this->quote($charset));
 	}
 
-	public function query($type, $sql, $as_object)
+	public function query($type, $sql, $return)
 	{
 		// Make sure the database is connected
 		$this->_connection or $this->connect();
@@ -102,13 +102,13 @@ class Kohana_Database_PDO extends Database {
 		if ($type === Database::SELECT)
 		{
 			// Convert the result into an array, as PDOStatement::rowCount is not reliable
-			if ($as_object === FALSE)
+			if ($return === FALSE)
 			{
 				$result->setFetchMode(PDO::FETCH_ASSOC);
 			}
-			elseif (is_string($as_object))
+			elseif (is_string($return))
 			{
-				$result->setFetchMode(PDO::FETCH_CLASS, $as_object);
+				$result->setFetchMode(PDO::FETCH_CLASS, $return);
 			}
 			else
 			{
@@ -118,9 +118,9 @@ class Kohana_Database_PDO extends Database {
 			$result = $result->fetchAll();
 
 			// Return an iterator of results
-			return new Database_Result_Cached($result, $sql, $as_object);
+			return new Database_Result_Cached($result, $sql, $return);
 		}
-		elseif ($type === Database::INSERT)
+		elseif ($type === Database::INSERT AND $return)
 		{
 			// Return a list of insert id and rows created
 			return array(
