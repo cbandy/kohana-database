@@ -90,7 +90,7 @@ abstract class Kohana_Database_Query_Builder extends Database_Query {
 					}
 
 					// Append the statement to the query
-					$sql .= $db->quote_identifier($column).' '.$op.' '.$value;
+					$sql .= $db->quote_column($column).' '.$op.' '.$value;
 				}
 
 				$last_condition = $condition;
@@ -120,7 +120,7 @@ abstract class Kohana_Database_Query_Builder extends Database_Query {
 				$direction = ' '.strtoupper($direction);
 			}
 
-			$sort[] = $db->quote_identifier($column).$direction;
+			$sort[] = $db->quote_column($column).$direction;
 		}
 
 		return 'ORDER BY '.implode(', ', $sort);

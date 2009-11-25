@@ -306,8 +306,8 @@ class Kohana_Database_Query_Builder_Select extends Database_Query_Builder_Where 
 	 */
 	public function compile(Database $db)
 	{
-		// Callback to quote identifiers
-		$quote_ident = array($db, 'quote_identifier');
+		// Callback to quote columns
+		$quote_column = array($db, 'quote_column');
 
 		// Callback to quote tables
 		$quote_table = array($db, 'quote_table');
@@ -329,7 +329,7 @@ class Kohana_Database_Query_Builder_Select extends Database_Query_Builder_Where 
 		else
 		{
 			// Select all columns
-			$query .= implode(', ', array_unique(array_map($quote_ident, $this->_select)));
+			$query .= implode(', ', array_unique(array_map($quote_column, $this->_select)));
 		}
 
 		if ( ! empty($this->_from))
@@ -353,7 +353,7 @@ class Kohana_Database_Query_Builder_Select extends Database_Query_Builder_Where 
 		if ( ! empty($this->_group_by))
 		{
 			// Add sorting
-			$query .= ' GROUP BY '.implode(', ', array_map($quote_ident, $this->_group_by));
+			$query .= ' GROUP BY '.implode(', ', array_map($quote_column, $this->_group_by));
 		}
 
 		if ( ! empty($this->_having))
