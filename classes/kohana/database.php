@@ -323,14 +323,37 @@ abstract class Kohana_Database {
 	 * @param   mixed   column name or array(column, alias)
 	 * @return  string
 	 */
-	public function quote_column($value)
+	public function quote_column($column)
 	{
-		$column = is_array($value) ? reset($value) : $value;
+		if (is_array($column))
+		{
+			list($column, $alias) = $column;
+		}
 
 		if ( ! is_string($column))
-			return $this->quote_identifier($value);
+		{
+			if ($column instanceof Database_Query)
+			{
+				// Create a sub-query
+				return '('.$column->compile($this).')';
+			}
+			elseif ($column instanceof Database_Expression)
+			{
+				// Use a raw expression
+				return $column->value();
+			}
+			else
+			{
+				// Convert to a string
+				$column = (string) $column;
+			}
+		}
 
-		if (strpos($column, '"') !== FALSE)
+		if ($column === '*')
+		{
+			return $column;
+		}
+		elseif (strpos($column, '"') !== FALSE)
 		{
 			// Quote the column in FUNC("column") identifiers
 			$column = preg_replace('/"(.+?)"/e', '$this->quote_column("$1")', $column);
@@ -348,17 +371,25 @@ abstract class Kohana_Database {
 				$parts[$offset] = $prefix.$parts[$offset];
 			}
 
-			// Quote each of the parts
-			$column = implode('.', array_map(array($this, 'quote_identifier'), $parts));
+			foreach ($parts as &$part)
+			{
+				if ($part !== '*')
+				{
+					// Quote each of the parts
+					$part = $this->_identifier.$part.$this->_identifier;
+				}
+			}
+
+			$column = implode('.', $parts);
 		}
 		else
 		{
-			$column = $this->quote_identifier($column);
+			$column = $this->_identifier.$column.$this->_identifier;
 		}
 
-		if (is_array($value))
+		if (isset($alias))
 		{
-			$column .= ' AS '.$this->quote_identifier(next($value));
+			$column .= ' AS '.$this->_identifier.$alias.$this->_identifier;
 		}
 
 		return $column;
@@ -370,19 +401,33 @@ abstract class Kohana_Database {
 	 * @param   mixed   table name or array(table, alias)
 	 * @return  string
 	 */
-	public function quote_table($value)
+	public function quote_table($table)
 	{
-		$table = is_array($value) ? reset($value) : $value;
+		if (is_array($table))
+		{
+			list($table, $alias) = $table;
+		}
 
 		if ( ! is_string($table))
-			return $this->quote_identifier($value);
-
-		if (strpos($table, '.') === FALSE)
 		{
-			// Add the table prefix
-			$table = $this->quote_identifier($this->table_prefix().$table);
+			if ($table instanceof Database_Query)
+			{
+				// Create a sub-query
+				return '('.$table->compile($this).')';
+			}
+			elseif ($table instanceof Database_Expression)
+			{
+				// Use a raw expression
+				return $table->value();
+			}
+			else
+			{
+				// Convert to a string
+				$table = (string) $table;
+			}
 		}
-		else
+
+		if (strpos($table, '.') !== FALSE)
 		{
 			$parts = explode('.', $table);
 
@@ -395,13 +440,23 @@ abstract class Kohana_Database {
 				$parts[$offset] = $prefix.$parts[$offset];
 			}
 
-			// Quote each of the parts
-			$table = implode('.', array_map(array($this, 'quote_identifier'), $parts));
+			foreach ($parts as &$part)
+			{
+				// Quote each of the parts
+				$part = $this->_identifier.$part.$this->_identifier;
+			}
+
+			$table = implode('.', $parts);
+		}
+		else
+		{
+			// Add the table prefix
+			$table = $this->_identifier.$this->table_prefix().$table.$this->_identifier;
 		}
 
-		if (is_array($value))
+		if (isset($alias))
 		{
-			$table .= ' AS '.$this->quote_identifier(next($value));
+			$table .= ' AS '.$this->_identifier.$alias.$this->_identifier;
 		}
 
 		return $table;
@@ -415,11 +470,12 @@ abstract class Kohana_Database {
 	 */
 	public function quote_identifier($value)
 	{
-		if ($value === '*')
+		if (is_array($value))
 		{
-			return $value;
+			list($value, $alias) = $value;
 		}
-		elseif (is_object($value))
+
+		if ( ! is_string($value))
 		{
 			if ($value instanceof Database_Query)
 			{
@@ -433,27 +489,34 @@ abstract class Kohana_Database {
 			}
 			else
 			{
-				// Convert the object to a string
-				return $this->quote_identifier((string) $value);
+				// Convert to a string
+				$value = (string) $value;
 			}
-		}
-		elseif (is_array($value))
-		{
-			// Separate the column and alias
-			list ($value, $alias) = $value;
-
-			return $this->quote_identifier($value).' AS '.$this->quote_identifier($alias);
 		}
 
 		if (strpos($value, '.') !== FALSE)
 		{
-			// Quote each of the parts
-			return implode('.', array_map(array($this, 'quote_identifier'), explode('.', $value)));
+			$parts = explode('.', $value);
+
+			foreach ($parts as &$part)
+			{
+				// Quote each of the parts
+				$part = $this->_identifier.$part.$this->_identifier;
+			}
+
+			$value = implode('.', $parts);
 		}
 		else
 		{
-			return $this->_identifier.$value.$this->_identifier;
+			$value = $this->_identifier.$value.$this->_identifier;
 		}
+
+		if (isset($alias))
+		{
+			$value .= ' AS '.$this->_identifier.$alias.$this->_identifier;
+		}
+
+		return $value;
 	}
 
 	/**
