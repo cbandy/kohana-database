@@ -181,7 +181,7 @@ class Kohana_Database_MySQL extends Database {
 		(
 			'bool'                      => array('type' => 'bool'),
 			'bigint unsigned'           => array('type' => 'int', 'min' => '0', 'max' => '18446744073709551615'),
-			'datetime'                  => array('type' => 'string'),
+			'datetime'                  => array('type' => 'datetime', 'format' => 'Y-m-d H:i:s'),
 			'decimal unsigned'          => array('type' => 'float', 'exact' => TRUE, 'min' => '0'),
 			'double'                    => array('type' => 'float'),
 			'double precision unsigned' => array('type' => 'float', 'min' => '0'),
@@ -209,7 +209,7 @@ class Kohana_Database_MySQL extends Database {
 			'tinyint'                   => array('type' => 'int', 'min' => '-128', 'max' => '127'),
 			'tinyint unsigned'          => array('type' => 'int', 'min' => '0', 'max' => '255'),
 			'tinytext'                  => array('type' => 'string'),
-			'year'                      => array('type' => 'string'),
+			'year'                      => array('type' => 'datetime', 'format' => 'Y'),
 		);
 
 		if (isset($types[$type]))

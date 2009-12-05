@@ -177,7 +177,7 @@ abstract class Kohana_Database {
 			'char varying'                  => array('type' => 'string'),
 			'character'                     => array('type' => 'string', 'exact' => TRUE),
 			'character varying'             => array('type' => 'string'),
-			'date'                          => array('type' => 'string'),
+			'date'                          => array('type' => 'datetime', 'format' => 'Y-m-d'),
 			'dec'                           => array('type' => 'float', 'exact' => TRUE),
 			'decimal'                       => array('type' => 'float', 'exact' => TRUE),
 			'double precision'              => array('type' => 'float'),
@@ -194,10 +194,10 @@ abstract class Kohana_Database {
 			'numeric'                       => array('type' => 'float', 'exact' => TRUE),
 			'real'                          => array('type' => 'float'),
 			'smallint'                      => array('type' => 'int', 'min' => '-32768', 'max' => '32767'),
-			'time'                          => array('type' => 'string'),
-			'time with time zone'           => array('type' => 'string'),
-			'timestamp'                     => array('type' => 'string'),
-			'timestamp with time zone'      => array('type' => 'string'),
+			'time'                          => array('type' => 'datetime', 'format' => 'H:i:s.u'),
+			'time with time zone'           => array('type' => 'datetime', 'format' => 'H:i:s.u P'),
+			'timestamp'                     => array('type' => 'datetime', 'format' => 'Y-m-d H:i:s.u'),
+			'timestamp with time zone'      => array('type' => 'datetime', 'format' => 'Y-m-d H:i:s.u P'),
 			'varchar'                       => array('type' => 'string'),
 
 			// SQL:1999
@@ -210,8 +210,8 @@ abstract class Kohana_Database {
 			'national character large object'   => array('type' => 'string'),
 			'nchar large object'                => array('type' => 'string'),
 			'nclob'                             => array('type' => 'string'),
-			'time without time zone'            => array('type' => 'string'),
-			'timestamp without time zone'       => array('type' => 'string'),
+			'time without time zone'            => array('type' => 'datetime', 'format' => 'H:i:s.u'),
+			'timestamp without time zone'       => array('type' => 'datetime', 'format' => 'Y-m-d H:i:s.u'),
 
 			// SQL:2003
 			'bigint'    => array('type' => 'int', 'min' => '-9223372036854775808', 'max' => '9223372036854775807'),
