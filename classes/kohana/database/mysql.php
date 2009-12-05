@@ -213,6 +213,8 @@ class Kohana_Database_MySQL extends Database {
 			'year'                      => array('type' => 'datetime', 'format' => 'Y'),
 		);
 
+		$type = str_replace(' zerofill', '', $type);
+
 		if (isset($types[$type]))
 			return $types[$type];
 
