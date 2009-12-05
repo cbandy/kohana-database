@@ -226,18 +226,18 @@ class Kohana_Database_MySQL extends Database {
 		if (is_string($like))
 		{
 			// Search for table names
-			$result = $this->query(Database::SELECT, 'SHOW TABLES LIKE '.$this->quote($like), FALSE);
+			$result = $this->query(Database::SELECT, 'SHOW FULL TABLES LIKE '.$this->quote($like), FALSE);
 		}
 		else
 		{
 			// Find all table names
-			$result = $this->query(Database::SELECT, 'SHOW TABLES', FALSE);
+			$result = $this->query(Database::SELECT, 'SHOW FULL TABLES', FALSE);
 		}
 
 		$tables = array();
 		foreach ($result as $row)
 		{
-			$tables[] = $row[0];
+			$tables[] = array('table_name' => reset($row), 'table_type' => next($row));
 		}
 
 		return $tables;
