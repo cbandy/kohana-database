@@ -328,9 +328,26 @@ class Kohana_Database_MySQL extends Database {
 						break;
 
 						case 'enum':
-						case 'set':
 							$column['collation_name'] = $row['Collation'];
 							$column['options'] = explode('\',\'', substr($length, 1, -1));
+
+							// Make indexes match those used by MySQL
+							array_unshift($column['options'], '');
+						break;
+
+						case 'set':
+							$column['collation_name'] = $row['Collation'];
+
+							// Make indexes match those used by MySQL
+
+							$column['options'] = array('');
+							$index = 1;
+
+							foreach (explode('\',\'', substr($length, 1, -1)) as $value)
+							{
+								$column['options'][$index] = $value;
+								$index *= 2;
+							}
 						break;
 					}
 				break;
