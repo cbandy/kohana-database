@@ -30,23 +30,21 @@ class Kohana_Database_MySQL_Result extends Database_Result {
 
 	public function seek($offset)
 	{
-		if ($this->offsetExists($offset) AND mysql_data_seek($this->_result, $offset))
-		{
-			// Set the current row to the offset
-			$this->_current_row = $this->_internal_row = $offset;
+		if ( ! $this->offsetExists($offset) OR ! mysql_data_seek($this->_result, $offset))
+			throw new OutOfBoundsException;
 
-			return TRUE;
-		}
-		else
-		{
-			return FALSE;
-		}
+		// Set the current row to the offset
+		$this->_current_row = $this->_internal_row = $offset;
+
+		return $this;
 	}
 
 	public function current()
 	{
-		if ($this->_current_row !== $this->_internal_row AND ! $this->seek($this->_current_row))
-			return FALSE;
+		if ($this->_current_row !== $this->_internal_row)
+		{
+			$this->seek($this->_current_row);
+		}
 
 		// Increment internal row for optimization assuming rows are fetched in order
 		$this->_internal_row++;

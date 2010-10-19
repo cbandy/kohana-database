@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 /**
- * Database result wrapper.
+ * Read-only, seekable result set iterator.
  *
  * @package    Kohana/Database
  * @category   Query/Result
@@ -229,14 +229,13 @@ abstract class Kohana_Database_Result implements Countable, Iterator, SeekableIt
 	 *
 	 *     $row = $result[10];
 	 *
+	 * @throws  OutOfBoundsException
+	 * @param   integer
 	 * @return  mixed
 	 */
 	public function offsetGet($offset)
 	{
-		if ( ! $this->seek($offset))
-			return NULL;
-
-		return $this->current();
+		return $this->seek($offset)->current();
 	}
 
 	/**
@@ -326,6 +325,22 @@ abstract class Kohana_Database_Result implements Countable, Iterator, SeekableIt
 	public function valid()
 	{
 		return $this->offsetExists($this->_current_row);
+	}
+
+	/**
+	 * Implements [SeekableIterator::seek], sets the current row.
+	 *
+	 * @throws  OutOfBoundsException
+	 * @param   integer
+	 * @return  $this
+	 */
+	public function seek($position)
+	{
+		if ( ! $this->offsetExists($position))
+			throw new OutOfBoundsException;
+
+		$this->_current_row = $position;
+		return $this;
 	}
 
 } // End Database_Result
