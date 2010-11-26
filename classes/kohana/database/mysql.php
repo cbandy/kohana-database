@@ -318,54 +318,92 @@ class Kohana_Database_MySQL extends Database {
 		return parent::datatype($type);
 	}
 
-	/**
-	 * Start a SQL transaction
-	 *
-	 * @link http://dev.mysql.com/doc/refman/5.0/en/set-transaction.html
-	 *
-	 * @param string Isolation level
-	 * @return boolean
-	 */
-	public function begin($mode = NULL)
+	public function begin($name = NULL, $mode = NULL)
 	{
-		// Make sure the database is connected
-		$this->_connection or $this->connect();
-
-		if ($mode AND ! mysql_query("SET TRANSACTION ISOLATION LEVEL $mode", $this->_connection))
+		if ($mode)
 		{
-			throw new Database_Exception(':error', array(':error' => mysql_error($this->_connection)),
-										 mysql_errno($this->_connection));
+			$this->_execute("SET TRANSACTION ISOLATION LEVEL $mode");
 		}
 
-		return (bool) mysql_query('START TRANSACTION', $this->_connection);
+		if ( ! empty($this->_transactions))
+			return $this->savepoint($name);
+
+		if ($name === NULL)
+		{
+			$name = 'kohana_txn_'.count($this->_transactions);
+		}
+
+		$this->_execute('START TRANSACTION');
+
+		// Push transaction onto stack
+		$this->_savepoints[$name] = array_push($this->_transactions, $name);
+
+		return $name;
 	}
 
-	/**
-	 * Commit a SQL transaction
-	 *
-	 * @param string Isolation level
-	 * @return boolean
-	 */
-	public function commit()
+	public function commit($name = NULL)
 	{
-		// Make sure the database is connected
-		$this->_connection or $this->connect();
+		if ($name === NULL OR $this->_savepoints[$name] === 1)
+		{
+			// Initial (i.e. outermost) transaction
+			$this->_execute('COMMIT');
 
-		return (bool) mysql_query('COMMIT', $this->_connection);
+			// Reset stack
+			$this->_savepoints = array();
+			$this->_transactions = array();
+		}
+		else
+		{
+			$this->_execute('RELEASE SAVEPOINT '.$this->quote_identifier($name));
+
+			// Pop this savepoint and all following savepoints from stack
+			for ($i = $this->_savepoints[$name], $max = count($this->_transactions); $i <= $max; ++$i)
+			{
+				unset($this->_savepoints[array_pop($this->_transactions)]);
+			}
+		}
 	}
 
-	/**
-	 * Rollback a SQL transaction
-	 *
-	 * @param string Isolation level
-	 * @return boolean
-	 */
-	public function rollback()
+	public function rollback($name = NULL)
 	{
-		// Make sure the database is connected
-		$this->_connection or $this->connect();
+		if ($name === NULL OR $this->_savepoints[$name] === 1)
+		{
+			// Initial (i.e. outermost) transaction
+			$this->_execute('ROLLBACK');
 
-		return (bool) mysql_query('ROLLBACK', $this->_connection);
+			// Reset stack
+			$this->_savepoints = array();
+			$this->_transactions = array();
+		}
+		else
+		{
+			$this->_execute('ROLLBACK TO '.$this->quote_identifier($name));
+
+			// Pop all following savepoints from stack
+			for ($i = $this->_savepoints[$name], $max = count($this->_transactions); $i < $max; ++$i)
+			{
+				unset($this->_savepoints[array_pop($this->_transactions)]);
+			}
+		}
+	}
+
+	public function savepoint($name = NULL)
+	{
+		if ($name === NULL)
+		{
+			$name = 'kohana_txn_'.count($this->_transactions);
+		}
+		elseif (isset($this->_savepoints[$name]))
+		{
+			throw new Kohana_Exception;
+		}
+
+		$this->_execute('SAVEPOINT '.$this->quote_identifier($name));
+
+		// Push savepoint onto stack
+		$this->_savepoints[$name] = array_push($this->_transactions, $name);
+
+		return $name;
 	}
 
 	public function list_tables($like = NULL)

@@ -93,6 +93,16 @@ abstract class Kohana_Database {
 	protected $_config;
 
 	/**
+	 * @var array   Map of savepoint names and their position in the stack. (name => position)
+	 */
+	protected $_savepoints = array();
+
+	/**
+	 * @var array   Stack of savepoint names. The current transaction is at the beginning of the array.
+	 */
+	protected $_transactions = array();
+
+	/**
 	 * Stores the database configuration locally and name the instance.
 	 *
 	 * [!!] This method cannot be accessed directly, you must use [Database::instance].
@@ -236,7 +246,7 @@ abstract class Kohana_Database {
 	}
 
 	/**
-	 * Start a SQL transaction
+	 * Start a transaction or define a savepoint
 	 *
 	 *     // Start the transactions
 	 *     $db->begin();
@@ -253,30 +263,45 @@ abstract class Kohana_Database {
 	 *          $db->rollback();
 	 *      }
 	 *
-	 * @param string transaction mode
-	 * @return  boolean
+	 * @throws  Database_Exception
+	 * @param   string  $name   Transaction or Savepoint identifier, NULL to generate
+	 * @param   string  $mode   Transaction mode
+	 * @return  string  Transaction or Savepoint identifier
 	 */
-	abstract public function begin($mode = NULL);
+	abstract public function begin($name = NULL, $mode = NULL);
 
 	/**
-	 * Commit the current transaction
+	 * Commit the current transaction or release a savepoint
 	 *
 	 *     // Commit the database changes
 	 *     $db->commit();
 	 *
-	 * @return  boolean
+	 * @throws  Database_Exception
+	 * @param   string  $name   Transaction or Savepoint identifier, NULL commits all
+	 * @return  void
 	 */
-	abstract public function commit();
+	abstract public function commit($name = NULL);
 
 	/**
-	 * Abort the current transaction
+	 * Abort the current transaction or revert to a savepoint
 	 *
 	 *     // Undo the changes
 	 *     $db->rollback();
 	 *
-	 * @return  boolean
+	 * @throws  Database_Exception
+	 * @param   string  $name   Transaction or Savepoint identifier, NULL reverts all
+	 * @return  void
 	 */
-	abstract public function rollback();
+	abstract public function rollback($name = NULL);
+
+	/**
+	 * Define a new savepoint in the current transaction
+	 *
+	 * @throws  Database_Exception
+	 * @param   string  $name   Transaction or Savepoint identifier, NULL to generate
+	 * @return  string  Savepoint identifier
+	 */
+	abstract public function savepoint($name = NULL);
 
 	/**
 	 * Count the number of records in a table.
