@@ -22,6 +22,68 @@ class Kohana_Database_MySQL extends Database {
 	// MySQL uses a backtick for identifiers
 	protected $_identifier = '`';
 
+	/**
+	 * Execute a statement after connecting
+	 *
+	 * @throws  Database_Exception
+	 * @param   string  $statement  SQL statement
+	 * @return  resource|TRUE   Result resource for a query or TRUE for a command
+	 */
+	protected function _execute($statement)
+	{
+		if ( ! $this->_connection)
+		{
+			// Make sure the database is connected
+			$this->connect();
+		}
+		elseif ( ! empty($this->_config['connection']['persistent']) AND $this->_config['connection']['database'] !== Database_MySQL::$_current_databases[$this->_connection_id])
+		{
+			// Select database on persistent connections
+			$this->_select_db($this->_config['connection']['database']);
+		}
+
+		if ( ! empty($this->_config['profiling']))
+		{
+			// Benchmark this query for the current instance
+			$benchmark = Profiler::start("Database ({$this->_instance})", $statement);
+		}
+
+		try
+		{
+			// Raises E_WARNING upon error
+			$result = mysql_query($statement, $this->_connection);
+		}
+		catch (Exception $e)
+		{
+			if (isset($benchmark))
+			{
+				Profiler::delete($benchmark);
+			}
+
+			throw new Database_Exception(':error [ :query ]',
+				array(':error' => $e->getMessage(), ':query' => $statement));
+		}
+
+		if ($result === FALSE)
+		{
+			if (isset($benchmark))
+			{
+				Profiler::delete($benchmark);
+			}
+
+			throw new Database_Exception(':error [ :query ]',
+				array(':error' => mysql_error($this->_connection), ':query' => $statement),
+				mysql_errno($this->_connection));
+		}
+
+		if (isset($benchmark))
+		{
+			Profiler::stop($benchmark);
+		}
+
+		return $result;
+	}
+
 	public function connect()
 	{
 		if ($this->_connection)
